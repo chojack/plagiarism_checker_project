@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="static/css/favicon.ico">
+    <title>충청투데이 표절 검사기</title>
+    
+
+<style>
+    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css");
+    
+    :root {
+        --primary-color: #2563eb;
+        --primary-hover: #1d4ed8;
+        --text-color: #1f2937;
+        --light-gray: #f3f4f6;
+        --border-color: #d1d5db;
+        --highlight-color: #fef08a;
+        --result-bg: #f9fafb;
+        --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        --radius: 8px;
+    }
+    
+    body { 
+        font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif; 
+        margin: 0; 
+        padding: 20px; 
+        background-color: #f4f4f8; 
+        color: var(--text-color);
+        line-height: 1.6;
+    }
+    
+    .container { 
+        max-width: 1400px;
+        margin: 0 auto;
+        background-color: #fff; 
+        padding: 32px; 
+        border-radius: var(--radius); 
+        box-shadow: var(--shadow);
+    }
+    
+    header {
+        margin-bottom: 24px;
+        border-bottom: 2px solid var(--light-gray);
+        padding-bottom: 16px;
+    }
+    
+    h1 {
+        color: var(--text-color);
+        font-size: 28px;
+        margin: 0 0 8px 0;
+    }
+    
+    .subtitle {
+        color: #6b7280;
+        font-size: 16px;
+        margin: 0;
+    }
+    
+    .layout {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+    
+    .card {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        overflow: hidden;
+        transition: box-shadow 0.3s ease;
+    }
+    
+    .card:hover {
+        box-shadow: var(--shadow);
+    }
+    
+    .card-header {
+        background-color: var(--light-gray);
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .card-body {
+        padding: 16px;
+    }
+    
+    textarea { 
+        width: 100%; 
+        min-height: 350px; 
+        padding: 12px; 
+        border: 1px solid var(--border-color); 
+        border-radius: 6px; 
+        font-size: 15px;
+        font-family: inherit;
+        resize: vertical;
+        transition: border-color 0.3s ease;
+        box-sizing: border-box;
+        max-height: 700px;
+    }
+    
+    textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    
+    .button-container {
+        text-align: center;
+        margin: 12px 0 24px;
+    }
+    
+    button { 
+        background-color: var(--primary-color); 
+        color: white; 
+        padding: 12px 24px; 
+        border: none; 
+        border-radius: 6px; 
+        cursor: pointer; 
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+    }
+    
+    button:hover { 
+        background-color: var(--primary-hover);
+        transform: translateY(-1px);
+    }
+    
+    button:active {
+        transform: translateY(1px);
+    }
+    
+    button svg {
+        margin-right: 8px;
+    }
+    
+    .result-area { 
+        height: 100%;
+        padding: 0;
+        background-color: var(--result-bg);
+    }
+    
+    .highlight { 
+        background-color: var(--highlight-color); 
+        font-weight: 500; 
+        padding: 1px 0;
+    }
+    
+    .label { 
+        font-weight: 600; 
+        margin-bottom: 10px; 
+        display: block; 
+        font-size: 15px; 
+        color: var(--text-color);
+    }
+    
+    .loading-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 0px;  /*기존 16px 에서 0px 교체, 버튼과 로딩 아이콘 사이 간격 필요하면 .button-container-responsive에 gap을 주거나 로딩 아이콘 자체의 왼쪽에 적은 마진을 줄 수 있습니다.예: margin-left: 8px; */
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .loading-container.active {
+        opacity: 1;
+    }
+    
+    .spinner {
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(37, 99, 235, 0.3);
+        border-radius: 50%;
+        border-top-color: var(--primary-color);
+        animation: spin 1s ease-in-out infinite;
+        margin-right: 8px;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: var(--radius);
+        padding: 10px;
+        margin: 5px;
+        text-align: center;
+        border: 1px solid var(--border-color);
+    }
+    
+    .stat-title {
+        font-size: 14px;
+        color: #6b7280;
+        margin-bottom: 8px;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-color);
+    }
+    
+    .stat-value.highlight {
+        color: #dc2626;
+        background: none;
+        padding: 0;
+    }
+    
+    #highlightedArticle {
+        background: white;
+        padding: 16px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        font-size: 15px;
+        line-height: 1.8;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    
+    .button-container-responsive {
+        display: none;
+    }
+    
+    /* 반응형 디자인 강화 */
+    @media (max-width: 1200px) {
+        .layout {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .result-section {
+            grid-column: span 2;
+        }
+        /* 버튼 컨테이너를 레이아웃 내부로 이동 */
+        .layout {
+            position: relative;
+        }
+        .button-container-responsive {
+            display: flex;
+            justify-content: center;
+            align-items: center; /* 세로 중앙 정렬 (로딩 텍스트와 버튼이 나란히 있을 경우) */
+            margin-top: 20px;
+            grid-column: span 2;
+            width: 100% /*할당된 그리드 공간을 꽉채우도록 보장 */
+            /* gap: 16px; 만약 버튼과 로딩 아이콘 사이 간격 필요하면 추가 */
+        }
+        .button-container {
+            display: none;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .layout {
+            grid-template-columns: 1fr;
+        }
+        .result-section {
+            grid-column: 1;
+        }
+        .stats {
+            grid-template-columns: 1fr;
+        }
+        .container {
+            padding: 20px;
+        }
+        .button-container-responsive {
+            grid-column: 1;
+        }
+    }
+    
+    /* 접근성 개선 */
+    textarea:focus-visible, 
+    button:focus-visible {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>충청투데이 보도자료 표절 검사기</h1>
+            <p class="subtitle">기사와 원본 보도자료를 비교하여 표절률을 분석합니다</p>
+        </header>
+        
+        <div class="layout">
+            <!-- 입력 섹션 1 (첫 번째 칼럼) -->
+            <div class="card">
+                <div class="card-header">
+                    <label for="article_text" class="label">검사할 기사 내용</label>
+                </div>
+                <div class="card-body">
+                    <textarea id="article_text" placeholder="검사할 기사 내용을 여기에 입력하세요..." oninput="textarea_autoResize(this)"></textarea>
+                </div>
+            </div>
+            
+            <!-- 입력 섹션 2 (두 번째 칼럼) -->
+            <div class="card">
+                <div class="card-header">
+                    <label for="source_text" class="label">비교할 보도자료/원본</label>
+                </div>
+                <div class="card-body">
+                    <textarea id="source_text" placeholder="비교할 원본 내용을 여기에 입력하세요..." oninput="textarea_autoResize(this)"></textarea>
+                </div>
+            </div>
+            
+            <!-- 결과 섹션 (세 번째 칼럼) -->
+            <div class="result-section card">
+                <div class="card-header">
+                    <h3 style="margin: 0; font-size: 15px;">검사 결과</h3>
+                </div>
+                <div id="resultDisplay" class="card-body result-area">
+                    <div class="stats">
+                        <div class="stat-card">
+                            <div class="stat-title">표절률</div>
+                            <div class="stat-value highlight"><span id="percentageResult">-</span>%</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title">기사 총 글자 수</div>
+                            <div class="stat-value"><span id="totalArticleChars">-</span></div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title">표절 의심 글자 수</div>
+                            <div class="stat-value"><span id="totalCopiedChars">-</span></div>
+                        </div>
+                    </div>
+                    <h3 style="font-size: 16px; margin-top: 0;">하이라이트된 기사 내용:</h3>
+                    <div id="highlightedArticle">분석 결과가 여기에 표시됩니다.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 반응형 버튼 컨테이너 추가 -->
+        <div class="button-container-responsive">
+            <button onclick="checkPlagiarism()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                표절 검사하기
+            </button>
+            <div class="loading-container" id="loadingIndicator-responsive">
+                <div class="spinner"></div>
+                <span>검사 중...</span>
+            </div>
+        </div>
+        
+        <!-- 검사 버튼 -->
+        <div class="button-container">
+            <button onclick="checkPlagiarism()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                표절 검사하기
+            </button>
+            <div class="loading-container" id="loadingIndicator">
+                <div class="spinner"></div>
+                <span>검사 중...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function escapeHtml(unsafe) {
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        async function checkPlagiarism() {
+            const articleText = document.getElementById('article_text').value;
+            const sourceText = document.getElementById('source_text').value;
+
+            // 먼저 입력값 검증을 수행
+            if (!articleText.trim() || !sourceText.trim()) {
+                alert("기사 내용과 원본 내용을 모두 입력해주세요.");
+                return;
+            }
+            
+            // 입력값이 유효한 경우에만 결과 영역 초기화
+            const resultDisplay = document.getElementById('resultDisplay');
+            const percentageResultSpan = document.getElementById('percentageResult');
+            const highlightedArticleDiv = document.getElementById('highlightedArticle');
+            const totalArticleCharsSpan = document.getElementById('totalArticleChars');
+            const totalCopiedCharsSpan = document.getElementById('totalCopiedChars');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const loadingIndicatorResponsive = document.getElementById('loadingIndicator-responsive');
+
+            //이제 결과 영역을 초기화하고 로딩 표시
+            resultDisplay.style.display = 'none'; // 이전 결과 숨기기
+            highlightedArticleDiv.innerHTML = ''; // 이전 하이라이트 내용 초기화
+
+            // 반응형 로딩 인디케이터도 함께 처리
+            loadingIndicator.classList.add('active');
+            if (loadingIndicatorResponsive) {
+            loadingIndicatorResponsive.classList.add('active');
+            }
+
+            try {
+                const response = await fetch('/check_plagiarism', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        article_text: articleText,
+                        source_text: sourceText
+                    })
+                });
+
+                // 로딩 인디케이터 숨기기
+                loadingIndicator.classList.remove('active');
+                if (loadingIndicatorResponsive) {
+                loadingIndicatorResponsive.classList.remove('active');
+                }
+
+
+                if (!response.ok) {
+                    const errorData = await response.json(); // FastAPI 에러 응답 형식 가정
+                    throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                percentageResultSpan.textContent = result.percentage_copied.toFixed(1);
+                totalArticleCharsSpan.textContent = result.total_article_chars.toLocaleString();
+                totalCopiedCharsSpan.textContent = result.total_copied_chars.toLocaleString();
+
+                // 하이라이트 로직
+                let rawArticleText = articleText; // 원본 기사 텍스트
+                let processedHtml = "";
+                let currentIndex = 0;
+
+                // 세그먼트를 시작 인덱스 기준으로 오름차순 정렬
+                const segments = result.copied_segments.sort((a, b) => a.article_start_char_index - b.article_start_char_index);
+
+                for (const segment of segments) {
+                    const startIndex = segment.article_start_char_index;
+                    const endIndex = startIndex + segment.length_chars;
+                    
+                    // 현재 인덱스부터 하이라이트 시작 전까지의 일반 텍스트 추가
+                    if (startIndex > currentIndex) {
+                        processedHtml += escapeHtml(rawArticleText.substring(currentIndex, startIndex));
+                    }
+                    
+                    // 하이라이트된 세그먼트 추가
+                    const originalSegment = rawArticleText.substring(startIndex, endIndex);
+                    processedHtml += `<span class="highlight">${escapeHtml(originalSegment)}</span>`;
+                    
+                    currentIndex = endIndex;
+                }
+
+                // 마지막 하이라이트된 세그먼트 이후의 나머지 텍스트 추가
+                if (currentIndex < rawArticleText.length) {
+                    processedHtml += escapeHtml(rawArticleText.substring(currentIndex));
+                }
+                
+                highlightedArticleDiv.innerHTML = processedHtml.replace(/\n/g, '<br>'); // 줄바꿈 처리
+                resultDisplay.style.display = 'block';
+
+            } catch (error) {
+        // 에러 시에도 로딩 인디케이터 숨기기
+        loadingIndicator.classList.remove('active');
+        if (loadingIndicatorResponsive) {
+            loadingIndicatorResponsive.classList.remove('active');
+        }
+        
+        console.error('Error:', error);
+        alert(`오류가 발생했습니다: ${error.message}`);
+        highlightedArticleDiv.textContent = "결과를 표시하는 중 오류가 발생했습니다.";
+        resultDisplay.style.display = 'block';
+    }
+        }
+
+        function textarea_autoResize(textarea) {
+        textarea.style.height = 'auto' // 높이를 자동으로 초기화
+        textarea.style.height = textarea.scrollHeight + 'px' // 스크롤 높이에 맞게 높이 설정
+      }
+
+    </script>
+</body>
+</html>
